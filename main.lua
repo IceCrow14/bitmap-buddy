@@ -185,6 +185,7 @@ function getBaseMapPathList(invader_path, halo_path, shader_path_list)
         elseif extension == "shader_model" then
             bitmap_path = getShaderModelBaseMapPath(invader_path, halo_path, v)
             if not bitmap_path then
+                -- Set to empty string so table counts match, and this can be parsed properly by other functions
                 bitmap_path = ""
             end
         elseif extension == "shader_transparent_chicago" then
@@ -220,7 +221,32 @@ function recoverBaseMaps(invader_path, halo_path, bitmap_path_list)
     end
 end
 
--- TODO: assemble temporary file containing [shader name] / [absolute base map path] pairs
+function createTemporaryDataFile(halo_path, shader_path_list, bitmap_path_list)
+    -- Creates a temporary file containing a list of shader name & absolute bitmap path pairs to be processed by 3DS Max
+    local data_path = DataPath(halo_path)
+    local path = "./temporary-data-file.txt"
+    local file = io.open(path, "w")
+    if not file then
+        print("error: failed to create temporary data file, bitmaps will not be imported to MAX")
+        return
+    end
+    for i, v in ipairs(shader_path_list) do
+        local bitmap_path = bitmap_path_list[i]
+        local shader_name = utils.get_file_name(v)
+        local absolute_bitmap_path = ""
+        if bitmap_path ~= "" then
+            -- Only valid paths are written to the file, for shaders without a base map, an empty string is written instead
+            absolute_bitmap_path = utils.generate_path(utils.remove_path_quotes(data_path), "/", bitmap_path)
+        end
+        file:write(i)
+        file:write("\n")
+        file:write(shader_name)
+        file:write("\n")
+        file:write(absolute_bitmap_path)
+        file:write("\n")
+    end
+    file:close()
+end
 
 -- ===== Execution =====
 print("Bitmap Buddy")
@@ -232,9 +258,9 @@ local halo_path = utils.generate_path("C:/All/Halo")
 local gbxmodel_path = utils.generate_path("vehicles/warthog/warthog.gbxmodel")
 
 -- Windows is chill in this regard and doesn't care if we omit the .exe extension, as long as the file is a .exe: the extension is appended implicitly
-local invader_edit_path = utils.generate_path(utils.remove_path_quotes(invader_path), "/invader-edit")
-local tags_path = utils.generate_path(utils.remove_path_quotes(halo_path), "/tags")
-local data_path = utils.generate_path(utils.remove_path_quotes(halo_path), "/data")
+-- local invader_edit_path = utils.generate_path(utils.remove_path_quotes(invader_path), "/invader-edit")
+-- local tags_path = utils.generate_path(utils.remove_path_quotes(halo_path), "/tags")
+-- local data_path = utils.generate_path(utils.remove_path_quotes(halo_path), "/data")
 
 local shader_count = getShaderCount(invader_path, halo_path, gbxmodel_path)
 local shader_list = getShaderPathList(invader_path, halo_path, gbxmodel_path)
@@ -253,6 +279,12 @@ for i, v in ipairs(bitmap_list) do
 end
 print("===== Recovering bitmaps... =====")
 recoverBaseMaps(invader_path, halo_path, bitmap_list)
+print("===== TEST: shader file names =====")
+for i, v in ipairs(shader_list) do
+    print("Shader file name", i, utils.get_file_name(v))
+end
+print("===== Creating temporary data file =====")
+createTemporaryDataFile(halo_path, shader_list, bitmap_list)
 -- End of test
 
 -- This is here only so I can see the window launched from Max

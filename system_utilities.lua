@@ -7,6 +7,27 @@ local module = {}
 
 local dkjson = require("./lib/dkjson/dkjson")
 
+function module.get_file_name(path)
+    -- Path is converted to Unix path in order to use "/" as comparator; quotes are removed so trailing quotes are not interpreted as part of the file extension
+    local work_path = module.remove_path_quotes(module.to_unix_path(path))
+    local extension = module.get_file_extension(work_path)
+    local last_slash_index
+    local name
+    if extension then
+        -- Length of file extension minus -2 accounts for the offsets of file extension and dot characters (think of this as the last character saved by the string)
+        work_path = string.sub(work_path, 1, - #extension - 2)
+    end
+    for i = #work_path, 1, -1 do
+        local character = string.sub(work_path, i, i)
+        if character == "/" then
+            last_slash_index = i
+            name = string.sub(work_path, last_slash_index + 1, -1)
+            break
+        end
+    end
+    return name
+end
+
 function module.get_file_extension(path)
     -- Path is converted to Unix path in order to use "/" as comparator; quotes are removed so trailing quotes are not interpreted as part of the file extension
     local work_path = module.remove_path_quotes(module.to_unix_path(path))
