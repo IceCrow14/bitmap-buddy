@@ -279,10 +279,10 @@ for i, v in ipairs(bitmap_list) do
 end
 print("===== Recovering bitmaps... =====")
 recoverBaseMaps(invader_path, halo_path, bitmap_list)
-print("===== TEST: shader file names =====")
-for i, v in ipairs(shader_list) do
-    print("Shader file name", i, utils.get_file_name(v))
-end
+-- print("===== TEST: shader file names =====")
+-- for i, v in ipairs(shader_list) do
+--     print("Shader file name", i, utils.get_file_name(v))
+-- end
 print("===== Creating temporary data file =====")
 createTemporaryDataFile(halo_path, shader_list, bitmap_list)
 -- End of test
