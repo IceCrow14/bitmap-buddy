@@ -88,12 +88,12 @@ function RecoverBitmapCommand(invader_path, halo_path, bitmap_path)
     local tags_path = TagsPath(halo_path)
     local data_path = DataPath(halo_path)
     local recover_bitmap_command = {}
-    table.insert(get_base_map_command, utils.add_quotes(invader_recover_path))
-    table.insert(get_base_map_command, "-d")
-    table.insert(get_base_map_command, utils.add_quotes(data_path))
-    table.insert(get_base_map_command, "-t")
-    table.insert(get_base_map_command, utils.add_quotes(tags_path))
-    table.insert(get_base_map_command, utils.add_quotes(bitmap_path))
+    table.insert(recover_bitmap_command, utils.add_quotes(invader_recover_path))
+    table.insert(recover_bitmap_command, "-d")
+    table.insert(recover_bitmap_command, utils.add_quotes(data_path))
+    table.insert(recover_bitmap_command, "-t")
+    table.insert(recover_bitmap_command, utils.add_quotes(tags_path))
+    table.insert(recover_bitmap_command, utils.add_quotes(bitmap_path))
     recover_bitmap_command = table.concat(recover_bitmap_command, " ")
     return recover_bitmap_command
 end
@@ -202,6 +202,26 @@ function getBaseMapPathList(invader_path, halo_path, shader_path_list)
     return bitmap_list
 end
 
+function recoverBaseMaps(invader_path, halo_path, bitmap_path_list)
+    -- Recovers (extracts) base maps to their respective data bitmaps folder non-destructively (doesn't overwrite existing files)
+    for i, v in ipairs(bitmap_path_list) do
+        if v == "" then
+            -- No bitmap to be recovered
+        else
+            local command = RecoverBitmapCommand(invader_path, halo_path, v)
+            local process
+            command = addCallOnWindowsHost(command)
+            process = io.popen(command)
+            if not process then
+                print("error: failed to run Invader command to recover base map \""..v.."\"")
+            end
+            process:close()
+        end
+    end
+end
+
+-- TODO: assemble temporary file containing [shader name] / [absolute base map path] pairs
+
 -- ===== Execution =====
 print("Bitmap Buddy")
 
@@ -231,6 +251,8 @@ print("===== Bitmap list =====")
 for i, v in ipairs(bitmap_list) do
     print(i.." - "..v)
 end
+print("===== Recovering bitmaps... =====")
+recoverBaseMaps(invader_path, halo_path, bitmap_list)
 -- End of test
 
 -- This is here only so I can see the window launched from Max
