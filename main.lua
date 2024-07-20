@@ -4,7 +4,7 @@
 
 -- MAXScript is a steaming pile of garbage, I can't stand it, so I decided to delegate as much code as possible to Lua
 
--- TODO: when all of this is finished, for the release version I will add packages with an embedded Lua interpreter, I won't bother creating executables anymore
+-- TODO: when all of this is finished, for the release version I will post release packages with an embedded Lua interpreter, I won't bother creating executables anymore
 
 local utils = require("./system_utilities")
 
@@ -63,7 +63,6 @@ function GBXModelGetShaderPathCommand(invader_path, halo_path, gbxmodel_path, sh
     return get_shader_command
 end
 
--- TODO: function to get the GBXModelShaderList
 -- TODO: individual functions to get the base map of other shader types
 
 function ShaderModelGetBaseMapCommand(invader_path, halo_path, shader_path)
@@ -98,8 +97,6 @@ function RecoverBitmapCommand(invader_path, halo_path, bitmap_path)
     recover_bitmap_command = table.concat(recover_bitmap_command, " ")
     return recover_bitmap_command
 end
-
--- TODO: function to recover all valid bitmaps from valid shaders
 
 function addCallOnWindowsHost(command)
     local is_windows_host = utils.is_windows_host()
@@ -156,7 +153,12 @@ function getShaderPathList(invader_path, halo_path, gbxmodel_path)
     return shader_list
 end
 
-function getBaseMapPath(invader_path, halo_path, shader_path)
+-- There are multiple shader tag types, though only some of them have a base bitmap that can be displayed naturally in 3DS Max
+-- At the moment, I only know how to import some of them to Max:
+-- shader_environment
+-- shader_model
+-- TODO: research and figure out how to handle the rest of them
+function getShaderModelBaseMapPath(invader_path, halo_path, shader_path)
     local command = ShaderModelGetBaseMapCommand(invader_path, halo_path, shader_path)
     local process
     local path
@@ -172,7 +174,33 @@ function getBaseMapPath(invader_path, halo_path, shader_path)
     return path
 end
 
-
+function getBaseMapPathList(invader_path, halo_path, shader_path_list)
+    local bitmap_list = {}
+    for i, v in ipairs(shader_path_list) do
+        -- If no base map is found for a shader, or if the base map is inaccessible, it is ignored and set to something not nil so shader and bitmap table counts match
+        local extension = utils.get_file_extension(v)
+        local bitmap_path = ""
+        -- TODO: implement logic for unimplemented shader types
+        if extension == "shader_environment" then
+        elseif extension == "shader_model" then
+            bitmap_path = getShaderModelBaseMapPath(invader_path, halo_path, v)
+            if not bitmap_path then
+                bitmap_path = ""
+            end
+        elseif extension == "shader_transparent_chicago" then
+        elseif extension == "shader_transparent_chicago_extended" then
+        elseif extension == "shader_transparent_generic" then
+        elseif extension == "shader_transparent_glass" then
+        elseif extension == "shader_transparent_meter" then
+        elseif extension == "shader_transparent_plasma" then
+        elseif extension == "shader_transparent_water" then
+        else
+            print("error: unrecognized shader file extension, this is not expected to happen with Halo Custom Edition tags!")
+        end
+        table.insert(bitmap_list, bitmap_path)
+    end
+    return bitmap_list
+end
 
 -- ===== Execution =====
 print("Bitmap Buddy")
@@ -190,38 +218,20 @@ local data_path = utils.generate_path(utils.remove_path_quotes(halo_path), "/dat
 
 local shader_count = getShaderCount(invader_path, halo_path, gbxmodel_path)
 local shader_list = getShaderPathList(invader_path, halo_path, gbxmodel_path)
+local bitmap_list = getBaseMapPathList(invader_path, halo_path, shader_list)
 
+-- TODO: test, remove when finished
+print("===== Shader count =====")
 print(shader_count)
+print("===== Shader list =====")
 for i, v in ipairs(shader_list) do
     print(i.." - "..v)
 end
-
--- There are multiple shader tag types, though only some of them have a base bitmap that can be displayed naturally in 3DS Max
--- At the moment, I only know about the following:
--- shader_environment
--- shader_model
--- Other shader types are:
--- shader_transparent_chicago
--- shader_transparent_chicago_extended
--- shader_transparent_generic
--- shader_transparent_glass
--- shader_transparent_meter
--- shader_transparent_plasma
--- shader_transparent_water
-local get_bitmap_command_list = {}
-for i = 1, shader_count do
-    local shader = shader_list[i]
-    local shader_extension = utils.get_file_extension(shader)
-    print(i, shader, shader_extension)
-
-    if shader_extension == "shader_environment" then
-
-    elseif shader_extension == "shader_model" then
-        local base_map = getBaseMapPath(invader_path, halo_path, shader)
-        print("*", i, base_map)
-    end
-
+print("===== Bitmap list =====")
+for i, v in ipairs(bitmap_list) do
+    print(i.." - "..v)
 end
+-- End of test
 
 -- This is here only so I can see the window launched from Max
 -- os.execute("TIMEOUT /T 15")
