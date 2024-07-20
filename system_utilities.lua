@@ -7,6 +7,25 @@ local module = {}
 
 local dkjson = require("./lib/dkjson/dkjson")
 
+function module.get_file_extension(path)
+    -- Path is converted to Unix path in order to use "/" as comparator; quotes are removed so trailing quotes are not interpreted as part of the file extension
+    local work_path = module.remove_path_quotes(module.to_unix_path(path))
+    local last_dot_index
+    local extension
+    for i = #work_path, 1, -1 do
+        local character = string.sub(work_path, i, i)
+        if character == "/" then
+            -- If there is no dot after the last trailing dash, it means the path does not point to a file (or the file doesn't have an extension)
+            return
+        elseif character == "." then
+            last_dot_index = i
+            extension = string.sub(work_path, i + 1, #work_path)
+            break
+        end
+    end
+    return extension
+end
+
 function module.remove_path_quotes(path)
     -- Removes pairs of outer quotes from file and directory paths, yes, even stacked quotes
     local first = string.sub(path, 1, 1)
