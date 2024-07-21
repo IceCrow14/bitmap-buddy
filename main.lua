@@ -249,23 +249,25 @@ function createTemporaryDataFile(halo_path, shader_path_list, bitmap_path_list)
 end
 
 -- ===== Execution =====
+-- Expects three arguments: the full path to the Invader installation, the full path to the Halo installation, and the GBXmodel path relative to the tags folder
+local invader_path
+local halo_path
+local gbxmodel_path
+local shader_count
+local shader_list
+local bitmap_list
+if #arg < 3 then
+    print("error: insufficient arguments, aborting script")
+    return 1
+end
+invader_path = arg[1]
+halo_path = arg[2]
+gbxmodel_path = arg[3]
+shader_count = getShaderCount(invader_path, halo_path, gbxmodel_path)
+shader_list = getShaderPathList(invader_path, halo_path, gbxmodel_path)
+bitmap_list = getBaseMapPathList(invader_path, halo_path, shader_list)
+
 print("Bitmap Buddy")
-
--- TODO: remove these test paths
--- Expects the full path to the Invader installation, the full path to the Halo installation, and the GBXmodel path relative to the tags folder
-local invader_path = utils.generate_path("C:/All/Halo/tools/invader-0-52-4")
-local halo_path = utils.generate_path("C:/All/Halo")
-local gbxmodel_path = utils.generate_path("vehicles/warthog/warthog.gbxmodel")
-
--- Windows is chill in this regard and doesn't care if we omit the .exe extension, as long as the file is a .exe: the extension is appended implicitly
--- local invader_edit_path = utils.generate_path(utils.remove_path_quotes(invader_path), "/invader-edit")
--- local tags_path = utils.generate_path(utils.remove_path_quotes(halo_path), "/tags")
--- local data_path = utils.generate_path(utils.remove_path_quotes(halo_path), "/data")
-
-local shader_count = getShaderCount(invader_path, halo_path, gbxmodel_path)
-local shader_list = getShaderPathList(invader_path, halo_path, gbxmodel_path)
-local bitmap_list = getBaseMapPathList(invader_path, halo_path, shader_list)
-
 -- TODO: test, remove when finished
 print("===== Shader count =====")
 print(shader_count)
@@ -285,7 +287,8 @@ recoverBaseMaps(invader_path, halo_path, bitmap_list)
 -- end
 print("===== Creating temporary data file =====")
 createTemporaryDataFile(halo_path, shader_list, bitmap_list)
+print("Done")
 -- End of test
 
 -- This is here only so I can see the window launched from Max
--- os.execute("TIMEOUT /T 15")
+-- os.execute("TIMEOUT /T 30")
