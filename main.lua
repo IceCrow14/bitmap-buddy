@@ -1,11 +1,5 @@
 -- Bitmap buddy
 
--- Has three modes: help, setup, and standard
-
--- MAXScript is a steaming pile of garbage, I can't stand it, so I decided to delegate as much code as possible to Lua
-
--- TODO: when all of this is finished, for the release version I will post release packages with an embedded Lua interpreter, I won't bother creating executables anymore
-
 local utils = require("./system_utilities")
 
 -- ===== Functions =====
@@ -63,8 +57,6 @@ function GBXModelGetShaderPathCommand(invader_path, halo_path, gbxmodel_path, sh
     return get_shader_command
 end
 
--- TODO: individual functions to get the base map of other shader types
-
 function ShaderModelGetBaseMapCommand(invader_path, halo_path, shader_path)
     -- Returns a command string to get the bitmap path from a shader_model, expects shader_path to be relative to the tags directory
     local invader_edit_path = InvaderEditPath(invader_path)
@@ -79,8 +71,6 @@ function ShaderModelGetBaseMapCommand(invader_path, halo_path, shader_path)
     get_base_map_command = table.concat(get_base_map_command, " ")
     return get_base_map_command
 end
-
--- TODO: function to get a table of valid shader-bitmap pairs
 
 function RecoverBitmapCommand(invader_path, halo_path, bitmap_path)
     -- Returns a command string to extract (recover) the bitmap to the data folder from a bitmap tag, expects bitmap_path to be relative to the tags directory
@@ -159,6 +149,7 @@ end
 -- shader_model
 -- TODO: research and figure out how to handle the rest of them
 function getShaderModelBaseMapPath(invader_path, halo_path, shader_path)
+    -- Returns a relative bitmap tag path ending in ".bitmap"
     local command = ShaderModelGetBaseMapCommand(invader_path, halo_path, shader_path)
     local process
     local path
@@ -238,8 +229,11 @@ function createTemporaryDataFile(halo_path, shader_path_list, bitmap_path_list)
         local shader_name = utils.get_file_name(v)
         local absolute_bitmap_path = ""
         if bitmap_path ~= "" then
-            -- Only valid paths are written to the file, for shaders without a base map, an empty string is written instead
             absolute_bitmap_path = utils.generate_path(utils.remove_path_quotes(data_path), "/", bitmap_path)
+            -- According to The Reclaimers Library (c20), Invader-recover produces .TIF files from bitmap tags:
+            -- So, the .bitmap file extension must be replaced with .tif when exported to the data file read by Max, in order to point to the right source file
+            absolute_bitmap_path = string.sub(absolute_bitmap_path, 1, -8) -- Removes ".bitmap"
+            absolute_bitmap_path = absolute_bitmap_path..".tif" -- Adds ".tif"
         end
         file:write(shader_name)
         file:write("\n")
@@ -269,27 +263,23 @@ shader_list = getShaderPathList(invader_path, halo_path, gbxmodel_path)
 bitmap_list = getBaseMapPathList(invader_path, halo_path, shader_list)
 
 print("Bitmap Buddy")
--- TODO: test, remove when finished
-print("===== Shader count =====")
-print(shader_count)
-print("===== Shader list =====")
-for i, v in ipairs(shader_list) do
-    print(i.." - "..v)
-end
-print("===== Bitmap list =====")
-for i, v in ipairs(bitmap_list) do
-    print(i.." - "..v)
-end
+print("===== Getting shader and bitmap data... =====")
+-- print("===== Shader count =====")
+-- print(shader_count)
+-- print("===== Shader list =====")
+-- for i, v in ipairs(shader_list) do
+--     print(i.." - "..v)
+-- end
+-- print("===== Bitmap list =====")
+-- for i, v in ipairs(bitmap_list) do
+--     print(i.." - "..v)
+-- end
 print("===== Recovering bitmaps... =====")
 recoverBaseMaps(invader_path, halo_path, bitmap_list)
--- print("===== TEST: shader file names =====")
+-- print("===== Shader file names =====")
 -- for i, v in ipairs(shader_list) do
 --     print("Shader file name", i, utils.get_file_name(v))
 -- end
-print("===== Creating temporary data file =====")
+print("===== Creating temporary data file... =====")
 createTemporaryDataFile(halo_path, shader_list, bitmap_list)
 print("Done")
--- End of test
-
--- This is here only so I can see the window launched from Max
--- os.execute("TIMEOUT /T 30")
