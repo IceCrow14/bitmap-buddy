@@ -26,6 +26,10 @@ function getSettingsFilePath = (
 	return pathConfig.appendPath (getBitmapBuddyLocation()) "settings.txt"
 )
 
+function getTemporaryDataFilePath = (
+	return pathConfig.appendPath (getBitmapBuddyLocation()) "temporary-data-file.txt"
+)
+
 function isSettingsPathsReady invaderPath haloPath = (
 	-- This function checks whether the Invader path and Halo path have been set: returns true if all paths have been set; otherwise, false
 	-- Expects arguments to be the "text" property of the respective textboxes (edittext) from the rollout
@@ -111,32 +115,46 @@ function runLuaLauncher invaderPath haloPath modelPath = (
 	DOSCommand ("CALL " + command)
 )
 
-function getDataFromDataFile temporaryDataFilePath = (
-	-- TODO
-	-- Returns a... An array? Containing two arrays: one array of shader names and one array of bitmap absolute paths (or empty string)
-	
+function getDataFromDataFile = (
+	-- Returns an array containing two arrays: one array of shader names and one array of bitmap absolute paths (or empty string)
+	temporaryDataFilePath = getTemporaryDataFilePath()
 	temporaryDataFile = openFile temporaryDataFilePath mode:"r"
-	
 	if temporaryDataFile != undefined then (
 		messageBox "Opened temporary data file" title:"Information"
-		
 		shaderCount = readLine temporaryDataFile as Integer
-		
 		-- Two dimensional array, contains the shader name array as the first element, and the absolute bitmap path array as the second element
 		data = #(#(), #())
 		shaders = data[1]
 		bitmaps = data[2]
-		
-		messageBox (shaderCount as String) title:"Shader count"
-		
+-- 		messageBox (shaderCount as String) title:"Shader count"
 		for i = 1 to shaderCount do (
-			
+			shaders[i] = readLine temporaryDataFile as String
+			bitmaps[i] = readLine temporaryDataFile as String
 		)
-		
 		close temporaryDataFile
+-- 		for i = 1 to shaderCount do (
+-- 			messageBox (shaders[i] + "\n" + bitmaps[i]) title:(i as String)
+-- 		)
 	) else (
 		messageBox "Failed to open temporary data file" title:"Error"
 	)
+)
+
+function test = (
+	messageBox "Test" title:"Test"
+	messageBox (sceneMaterials.count as String)
+	for i = 1 to sceneMaterials.count do (
+		messageBox "Scene material " + (i as String) + " = " + sceneMaterials[i].name
+	)
+	
+	-- This stuff is barely documented in the documentation, I will take some inspiration from other scripts that modify the material library
+-- 	meditMaterials[1] = multimaterial()
+-- 	for s = 1 to shader_name.count do
+-- 	(
+-- 		meditMaterials[1].names[s] = shader_name[s]
+-- 		meditMaterials[1].materialList[s].name = shader_name[s]
+-- 		meditMaterials[1].materialIDList[s] = s
+-- 	)
 	
 )
 
@@ -221,9 +239,11 @@ rollout myRollout "Bitmap Buddy (GBXModel Bitmap Importer)" width:640 --height:4
 	on import_bitmaps_button pressed do (
 		--
 		runLuaLauncher invader_textbox.text halo_textbox.text model_textbox.text
+		
+		dataSuperArray = getDataFromDataFile()
+		
+		--test()
 		--
-		
-		
 	)
 	
 )
