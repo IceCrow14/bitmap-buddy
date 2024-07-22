@@ -23,13 +23,73 @@ function getBitmapBuddyLocation = (
 )
 
 function getSettingsFilePath = (
-	-- TODO: at the moment, for Windows only. I don't know if 3DS Max has built-in OS detection functions
 	return pathConfig.appendPath (getBitmapBuddyLocation()) "settings.txt"
 )
 
+function isSettingsPathsReady invaderPath haloPath = (
+	-- This function checks whether the Invader path and Halo path have been set: returns true if all paths have been set; otherwise, false
+	-- Expects arguments to be the "text" property of the respective textboxes (edittext) from the rollout
+	if invaderPath != undefined and invaderPath != "" \
+		and haloPath != undefined and haloPath != "" then (
+		return true
+	)
+	return false
+)
+
+function saveSettingsPaths invaderPath haloPath = (
+	-- Creates a new settings file to save the Invader and Halo installation paths, and load them in the future automatically
+	-- Expects the argument paths to be -not- in quotes, they are -not- added automatically to paths returned from "getSavePath"
+	settingsFilePath = getSettingsFilePath()
+	settingsFile = openFile settingsFilePath
+	if settingsFile != undefined then (
+		close settingsFile
+		settingsFile = openFile settingsFilePath mode:"w"
+		if settingsFile != undefined then (
+			-- Each "%" sign in the format string is one of the arguments to "format", no additional quotes are added (\n is for new line jumps)
+			-- The "to" option specifies the output file stream (the settings file, in this case)
+			-- It it also possible to write to a file using "print" instead of "format", but it is not preferred because "print" adds another set of quotes to the text automatically
+			format "%\n" invaderPath to:settingsFile
+			format "%\n" haloPath to:settingsFile
+			close settingsFile
+			messageBox "Settings saved successfully" title:"Information"
+		) else (
+			messageBox "Failed to create settings file" title:"Error"
+		)
+	) else (
+		settingsFile = createFile settingsFilePath
+		if settingsFile != undefined then (
+			close settingsFile
+			settingsFile = openFile mode:"w"
+			format "%" invaderPath to:settingsFile
+			format "%" haloPath to:settingsFile
+			close settingsFile
+			messageBox "Settings saved successfully" title:"Information"
+		) else (
+			messageBox "Failed to create settings file" title:"Error"
+		)
+	)
+)
+
+function loadSettingsPaths invaderTextbox haloTextbox = (
+	-- Loads the settings file, and loads the Invader and Halo installation paths automatically if the file is found
+	-- Expects the arguments to be the textbox (edittext) objects of the rollout, where paths will be pasted
+	-- Paths saved to the file are not stored in quotes
+	settingsFilePath = getSettingsFilePath()
+	settingsFile = openFile settingsFilePath
+	if settingsFile != undefined then (
+		invaderPath = readLine settingsFile as String
+		haloPath = readLine settingsFile as String
+		close settingsFile
+		invaderTextbox.text = invaderPath
+		haloTextbox.text = haloPath
+	) else (
+		-- Nothing, no settings file was found and no action is taken
+	)
+)
+
 function isRolloutReady invader_path halo_path model_path = (
-	-- This function checks whether the Invader path, Halo path and the GBXModel path have been set: returns true if all paths have been set; otherwise, returns undefined
-	-- Expects arguments to be the "text" property of the respective textboxes (edittext) from this rollout
+	-- This function checks whether the Invader path, Halo path and the GBXModel path have been set: returns true if all paths have been set; otherwise, false
+	-- Expects arguments to be the "text" property of the respective textboxes (edittext) from the rollout
 	if invader_path != undefined and invader_path != "" \
 		and halo_path != undefined and halo_path != "" \ 
 		and model_path != undefined and model_path != "" then (
@@ -49,6 +109,35 @@ function runLuaLauncher invaderPath haloPath modelPath = (
 	-- Calls the launcher script from the DOSCommand window
 	-- (Runs the Lua script that calls Invader)
 	DOSCommand ("CALL " + command)
+)
+
+function getDataFromDataFile temporaryDataFilePath = (
+	-- TODO
+	-- Returns a... An array? Containing two arrays: one array of shader names and one array of bitmap absolute paths (or empty string)
+	
+	temporaryDataFile = openFile temporaryDataFilePath mode:"r"
+	
+	if temporaryDataFile != undefined then (
+		messageBox "Opened temporary data file" title:"Information"
+		
+		shaderCount = readLine temporaryDataFile as Integer
+		
+		-- Two dimensional array, contains the shader name array as the first element, and the absolute bitmap path array as the second element
+		data = #(#(), #())
+		shaders = data[1]
+		bitmaps = data[2]
+		
+		messageBox (shaderCount as String) title:"Shader count"
+		
+		for i = 1 to shaderCount do (
+			
+		)
+		
+		close temporaryDataFile
+	) else (
+		messageBox "Failed to open temporary data file" title:"Error"
+	)
+	
 )
 
 rollout myRollout "Bitmap Buddy (GBXModel Bitmap Importer)" width:640 --height:480
@@ -79,35 +168,10 @@ rollout myRollout "Bitmap Buddy (GBXModel Bitmap Importer)" width:640 --height:4
 	)
 	
 	on myRollout open do (
-		-- Read settings if found, or set up the settings file
-		settingsFilePath = getSettingsFilePath()
-		
-		--messageBox settingsFilePath
-		
-		
-		
--- 		settingsFile = openFile (settingsFilePath) mode: "r"
--- 		
--- 		if settingsFile == undefined then (
--- 			
--- 			messageBox "Could not open settings file. Creating settings file... "
--- 			newSettingsFile = undefined -- createFile "C:\\Users\\icecr\\Desktop\\settings.txt"
--- 			
--- 			if newSettingsFile == undefined then (
--- 				messageBox "Created file is undefined"
--- 			) else (
--- 				messageBox "Writing to file... "
--- 				writeLine newSettingsFile "Hello!"
--- 				messageBox "Closing settings file... "
--- 				close newSettingsFile
--- 				messageBox "Closed settings file"
--- 			)
--- 		) else (
--- 			messageBox "Closing settings file... "
--- 			close settingsFile
--- 			messageBox "Closed settings file"
--- 		)
-		
+		invaderTextbox = invader_textbox
+		haloTextbox = halo_textbox
+		loadSettingsPaths invaderTextbox haloTextbox
+		--
 	)
 	
 	on myRollout close do (
@@ -136,6 +200,12 @@ rollout myRollout "Bitmap Buddy (GBXModel Bitmap Importer)" width:640 --height:4
 		)
 	)
 	
+	on save_settings_button pressed do (
+		invaderPath = invader_textbox.text
+		haloPath = halo_textbox.text
+		saveSettingsPaths invaderPath haloPath
+	)
+	
 	on model_button pressed do (
 		model_path = getOpenFileName caption:"" \
 			types:"GBXModel Tag (*.gbxmodel)|*.gbxmodel" --\
@@ -149,51 +219,13 @@ rollout myRollout "Bitmap Buddy (GBXModel Bitmap Importer)" width:640 --height:4
 	)
 	
 	on import_bitmaps_button pressed do (
-		
+		--
 		runLuaLauncher invader_textbox.text halo_textbox.text model_textbox.text
+		--
+		
 		
 	)
 	
 )
 
 createDialog myRollout --width:250 height:100
-
--- 	on myRollout open do (
--- 		messageBox "Started rollout"
--- 		settingsFile = openFile settingsFilePath mode: "r"
--- 		if settingsFile == undefined then (
--- 			messageBox "Could not open settings file. Creating settings file... "
--- 			newSettingsFile = undefined -- createFile "C:\\Users\\icecr\\Desktop\\settings.txt"
--- 			if newSettingsFile == undefined then (
--- 				messageBox "Created file is undefined"
--- 			) else (
--- 				messageBox "Writing to file... "
--- 				writeLine newSettingsFile "Hello!"
--- 				messageBox "Closing settings file... "
--- 				close newSettingsFile
--- 				messageBox "Closed settings file"
--- 			)
--- 		) else (
--- 			messageBox "Closing settings file... "
--- 			close settingsFile
--- 			messageBox "Closed settings file"
--- 		)
--- 	)
-
---nameb = "Bitmap Buddy"
---prompt = "Hello World! " + nameb + " started successfully."
---nameone = 123.09 as string
---messageBox (prompt) title:"Custom Message"
-
--- Expects the folder to contain a settings file, and creates it if absent
---theFile = openFile ".\settings.txt" mode: "r"
---if theFile == undefined then (
---	messageBox "Invalid or inaccessible file"
---	throw "Abrupt end, invalid file"
---	messageBox "Endo!"
---) else (
---	messageBox "Valid file"
---	line1 = readLine theFile
---	line2 = readLine theFile
---	close theFile
---)

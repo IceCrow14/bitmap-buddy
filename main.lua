@@ -230,6 +230,9 @@ function createTemporaryDataFile(halo_path, shader_path_list, bitmap_path_list)
         print("error: failed to create temporary data file, bitmaps will not be imported to MAX")
         return
     end
+    -- Write the shader count at the start of the file
+    file:write(#shader_path_list)
+    file:write("\n")
     for i, v in ipairs(shader_path_list) do
         local bitmap_path = bitmap_path_list[i]
         local shader_name = utils.get_file_name(v)
@@ -238,8 +241,6 @@ function createTemporaryDataFile(halo_path, shader_path_list, bitmap_path_list)
             -- Only valid paths are written to the file, for shaders without a base map, an empty string is written instead
             absolute_bitmap_path = utils.generate_path(utils.remove_path_quotes(data_path), "/", bitmap_path)
         end
-        file:write(i)
-        file:write("\n")
         file:write(shader_name)
         file:write("\n")
         file:write(absolute_bitmap_path)
